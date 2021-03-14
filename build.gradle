@@ -14,7 +14,9 @@ buildscript {
         }
     }
     dependencies {
-        classpath 'com.github.CDAGaming:ForgeGradle:1c670759c5'
+        classpath ('com.anatawa12.forge:ForgeGradle:1.2-1.0.+') {
+            changing = true
+        }
     }
 }
 
@@ -38,14 +40,17 @@ if (project.hasProperty('buildnum')) {
 }
 
 version = simpleVersion + '-mc' + config.minecraft.version
-
 group = "net.bdew"
 archivesBaseName = "bdlib"
 
 minecraft {
-    version = "1.7.10-10.13.4.1614-1.7.10"
+    version = "${config.minecraft.version}-${config.forge.version}"
     runDir = "eclipse"
-    replace("BDLIB_VER", simpleVersion.toString())
+    replace("BDLIB_VER", "1.9.4")
+}
+
+dependencies {
+
 }
 
 processResources
@@ -67,23 +72,3 @@ processResources
                 exclude 'mcmod.info'
             }
         }
-
-task sourceJar(type: Jar) {
-    classifier "sources"
-}
-
-task deobfJar(type: Jar) {
-    from sourceSets.main.output
-    classifier "dev"
-    duplicatesStrategy "exclude"
-}
-
-afterEvaluate { project ->
-    // Fudge the inputs of source jars so we get the version after replacements
-    tasks.getByPath(":sourceJar").from(tasks.getByPath(":sourceMainScala").outputs.files)
-}
-
-artifacts {
-    archives sourceJar
-    archives deobfJar
-}

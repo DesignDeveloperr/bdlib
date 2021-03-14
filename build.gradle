@@ -1,20 +1,20 @@
 buildscript {
-    configurations.all {
-        resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
-    }
     repositories {
         mavenCentral()
         maven {
             name = "forge"
-            url = "http://files.minecraftforge.net/maven"
+            url = "https://files.minecraftforge.net/maven"
         }
         maven {
             name = "sonatype"
             url = "https://oss.sonatype.org/content/repositories/snapshots/"
         }
+        maven {
+            url = "https://jitpack.io"
+        }
     }
     dependencies {
-        classpath 'net.minecraftforge.gradle:ForgeGradle:1.2-SNAPSHOT'
+        classpath 'com.github.CDAGaming:ForgeGradle:1c670759c5'
     }
 }
 
@@ -43,36 +43,30 @@ group = "net.bdew"
 archivesBaseName = "bdlib"
 
 minecraft {
-    version = "${config.minecraft.version}-${config.forge.version}"
+    version = "1.7.10-10.13.4.1614-1.7.10"
+    runDir = "eclipse"
     replace("BDLIB_VER", simpleVersion.toString())
 }
 
-import org.apache.tools.ant.filters.ReplaceTokens
+processResources
+        {
+            // this will ensure that this task is redone when the versions change.
+            inputs.property "version", project.version
+            inputs.property "mcversion", project.minecraft.version
 
+            // replace stuff in mcmod.info, nothing else
+            from(sourceSets.main.resources.srcDirs) {
+                include 'mcmod.info'
 
-sourceSets {
-    main {
-        scala {
-            srcDir 'src'
+                // replace version and mcversion
+                expand 'version':project.version, 'mcversion':project.minecraft.version
+            }
+
+            // copy everything else, thats not the mcmod.info
+            from(sourceSets.main.resources.srcDirs) {
+                exclude 'mcmod.info'
+            }
         }
-        resources {
-            srcDir 'resources'
-        }
-        output.resourcesDir = output.classesDir // Hack for IDEA
-    }
-}
-
-processResources {
-    inputs.property "tokens", minecraft.replacements
-    from(sourceSets.main.resources.srcDirs) {
-        include 'mcmod.info'
-        filter(ReplaceTokens, tokens: minecraft.replacements)
-    }
-
-    from(sourceSets.main.resources.srcDirs) {
-        exclude 'mcmod.info'
-    }
-}
 
 task sourceJar(type: Jar) {
     classifier "sources"
@@ -92,34 +86,4 @@ afterEvaluate { project ->
 artifacts {
     archives sourceJar
     archives deobfJar
-}
-
-apply plugin: 'maven-publish'
-
-publishing {
-    publications {
-        maven(MavenPublication) {
-            artifact deobfJar
-            artifact sourceJar
-        }
-    }
-    repositories {
-        maven {
-            url "file://var/www/maven"
-        }
-    }
-}
-
-apply plugin: 'curseforge'
-
-curse {
-    projectId = config.curseforge.id
-    apiKey = project.hasProperty("curseForgeApiKey") ? project.curseForgeApiKey : ""
-    releaseType = 'alpha'
-
-    artifact = jar
-    changelog = project.hasProperty("changelog") ? project.changelog : "No changelog available"
-
-    additionalArtifact deobfJar
-    additionalArtifact sourceJar
 }
